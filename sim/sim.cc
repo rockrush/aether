@@ -31,8 +31,11 @@ VkResult enumerate_phys_devs(VkInstance *inst, VkPhysicalDevice *phys_devs, uint
 	uint32_t dev_cnt = 0;
 	VkResult vk_ret = vkEnumeratePhysicalDevices(*inst, &dev_cnt, nullptr);
 
-	if ((vk_ret != VK_SUCCESS) || (dev_cnt == 0)) {
-		std::cerr << "(Unknown error occured enumerating physical devices) " << __func__ << ":" << __LINE__ << std::endl;
+	if (vk_ret != VK_SUCCESS) {
+		std::cerr << "(Error enumerating physical devices) " << __func__ << ":" << __LINE__ << std::endl;
+		return VK_ERROR_DEVICE_LOST;
+	} else if (dev_cnt == 0) {
+		std::cerr << "(No compatible physical device found) " << __func__ << ":" << __LINE__ << std::endl;
 		return VK_ERROR_DEVICE_LOST;
 	}
 
@@ -68,12 +71,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	vk_ret = enumerate_phys_devs(&instance, phys_devs, &phys_dev_cnt);
-	if (vk_ret == VK_SUCCESS) {
-		free(phys_devs);
-	} else {
-		std::cout << "No compatible physical device found" << std::endl;
+	if (vk_ret != VK_SUCCESS) {
+		std::cerr << "No compatible physical device found" << std::endl;
 		return EXIT_FAILURE;
 	}
+
+	/* TODO: Query for extensions, logical device, and load the main logic */
+	std::cout << phys_dev_cnt << " devices found" << std::endl;
+	free(phys_devs);
+	vkDestroyInstance(instance, nullptr);
 
 	return EXIT_SUCCESS;
 }
